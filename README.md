@@ -37,7 +37,7 @@ and fill in the required values:
 - `RustdeskKey` – RustDesk server public key
 - `ValetUrl` – Aeon internal service endpoint (over VPN)
 
-**🚫 Do not commit **``** — it is excluded by **``**.**
+**🚫 Do not commit `Program.Secrets.cs` — it is excluded by `.gitignore`.**
 
 ### 2. Build a self-contained release
 
