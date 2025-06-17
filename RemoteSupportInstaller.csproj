@@ -22,9 +22,6 @@
 	<NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Program.Secrets.cs" Condition="Exists('Program.Secrets.cs')" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Remove="Program.Secrets.Template.cs" />
     <None Include="Program.Secrets.Template.cs" />
   </ItemGroup>

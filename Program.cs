@@ -102,6 +102,19 @@ public static partial class Program
 
 		if (!File.Exists(netbirdExePath))
 		{
+			var localInstaller = Directory
+				.EnumerateFiles(Directory.GetCurrentDirectory(), "netbird_installer_*.exe")
+				.FirstOrDefault();
+
+			if (localInstaller != null)
+			{
+				Console.WriteLine($"📁 Found local NetBird installer: {Path.GetFileName(localInstaller)}");
+				Console.WriteLine("▶️ Launching installer...");
+				RunCommand(localInstaller, "", ignoreError: false, verbose: true);
+			}			
+		}
+		if (!File.Exists(netbirdExePath))
+		{
 			Console.WriteLine("📦 Installing NetBird");
 			string netbirdUrl = await GetLatestNetbirdBinaryUrl();
 			string archivePath = Path.Combine(Path.GetTempPath(), "netbird_win.tar.gz");
@@ -169,6 +182,9 @@ public static partial class Program
 	
 	static async Task InstallWintun(string destinationFolder)
 	{
+		string dllDestinationPath = Path.Combine(destinationFolder, "wintun.dll");
+		if (File.Exists(dllDestinationPath)) return;
+		
 		Console.WriteLine("Installing Wintun driver...");
 
 		// Define download URL and paths
@@ -186,7 +202,6 @@ public static partial class Program
 			throw new FileNotFoundException($"wintun.dll not found for architecture {arch}.");
 
 		// Copy wintun.dll to the destination folder
-		string dllDestinationPath = Path.Combine(destinationFolder, "wintun.dll");
 		File.Copy(dllSourcePath, dllDestinationPath, overwrite: true);
 
 		Console.WriteLine($"✅ Wintun driver installed to {dllDestinationPath}");
@@ -256,10 +271,25 @@ public static partial class Program
             Environment.Exit(1);
 		}
 
-		Console.WriteLine("Downloading RustDesk...");
-		string installerUrl = await GetLatestRustdeskDownloadUrl();
-		string installerPath = Path.Combine(Path.GetTempPath(), "rustdesk-installer.msi");
-		await DownloadFileAsync(installerUrl, installerPath);
+		// Look for local RustDesk installer
+		var localRustDesk = Directory
+			.EnumerateFiles(Directory.GetCurrentDirectory(), "rustdesk-*.msi")
+			.FirstOrDefault();
+
+		string installerPath;
+
+		if (localRustDesk != null)
+		{
+			Console.WriteLine($"📁 Found local RustDesk installer: {Path.GetFileName(localRustDesk)}");
+			installerPath = localRustDesk;
+		}
+		else
+		{
+			Console.WriteLine("🌐 Downloading RustDesk...");
+			string installerUrl = await GetLatestRustdeskDownloadUrl();
+			installerPath = Path.Combine(Path.GetTempPath(), "rustdesk-installer.msi");
+			await DownloadFileAsync(installerUrl, installerPath);
+		}
 
 		Console.WriteLine("Configuring RustDesk...");
 		string configDir = Path.Combine(svcConfigDir, "config");
@@ -294,7 +324,8 @@ key = '{RustdeskKey}'
 
 		Console.WriteLine("Installing RustDesk...");
 		RunCommand("msiexec", $"/i \"{installerPath}\" /qn INSTALLFOLDER=\"{rustdeskFolder}\" CREATESTARTMENUSHORTCUTS=\"Y\" CREATEDESKTOPSHORTCUTS=\"N\" INSTALLPRINTER=\"N\"");
-		File.Delete(installerPath);
+		if (!installerPath.StartsWith(Directory.GetCurrentDirectory()))
+			File.Delete(installerPath);
 		
 		Console.WriteLine($"✅ RustDesk service installed. Password is \'{RustdeskPassword}\'.");
 	}
